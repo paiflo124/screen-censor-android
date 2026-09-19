@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Shield icon with eye block -->
+    <path
+        android:fillColor="#2979FF"
+        android:pathData="M54,20 L30,30 L30,52 C30,68 40,82 54,88 C68,82 78,68 78,52 L78,30 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,50 L66,50 L66,58 L42,58 Z" />
+</vector>
