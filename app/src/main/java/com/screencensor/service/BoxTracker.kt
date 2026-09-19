@@ -93,6 +93,11 @@ class BoxTracker(
     }
 
     @Synchronized
+    fun getCurrentTracks(): List<DetectionBox> {
+        return trackedBoxes.toList()
+    }
+
+    @Synchronized
     fun clear() {
         trackedBoxes.clear()
     }

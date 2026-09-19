@@ -17,8 +17,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⚡ Screen Censor AI"
-            android:textColor="@color/white"
+            android:text="⚡ BETA BLOCKER TURBO"
+            android:textColor="@color/beta_pink"
             android:textSize="26sp"
             android:textStyle="bold" />
 
@@ -26,8 +26,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="Beta Blocker + Hotscreen Unified Super App"
-            android:textColor="#00E5FF"
+            android:text="Real-time AI Shield with Bubble Motion Engine"
+            android:textColor="@color/beta_cyan"
             android:textSize="13sp" />
 
         <!-- Status Card -->
@@ -61,7 +61,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="54dp"
                     android:layout_marginTop="12dp"
-                    android:backgroundTint="@color/accent_blue"
+                    android:backgroundTint="@color/beta_pink"
                     android:text="@string/btn_start"
                     android:textColor="@color/white"
                     android:textSize="15sp"

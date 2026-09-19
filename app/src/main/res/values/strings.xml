@@ -1,20 +1,20 @@
 <resources>
-    <string name="app_name">Screen Censor AI</string>
-    <string name="title_settings">การตั้งค่าการบล็อก (Censor Settings)</string>
-    <string name="status_inactive">สถานะ: ปิดการทำงาน</string>
-    <string name="status_active">สถานะ: กำลังตรวจจับและเซ็นเซอร์หน้าจอ</string>
-    <string name="btn_start">เริ่มการทำงาน (Start Censor)</string>
-    <string name="btn_stop">หยุดการทำงาน (Stop Censor)</string>
-    <string name="perm_overlay_title">สิทธิ์แสดงทับหน้าจอ (Overlay Permission)</string>
-    <string name="perm_overlay_desc">จำเป็นสำหรับการวาดแถบสีดำเซ็นเซอร์ทับหน้าจอ</string>
-    <string name="perm_screen_title">สิทธิ์ดักจับหน้าจอ (MediaProjection)</string>
-    <string name="perm_screen_desc">ใช้สำหรับให้โมเดล AI สแกนเนื้อหาแบบเรียลไทม์</string>
+    <string name="app_name">Beta Blocker Turbo</string>
+    <string name="title_settings">BETA BLOCKER TURBO SETTINGS</string>
+    <string name="status_inactive">STATUS: INACTIVE / OFF</string>
+    <string name="status_active">STATUS: ACTIVE - TURBO SHIELD ON</string>
+    <string name="btn_start">ACTIVATE TURBO SHIELD</string>
+    <string name="btn_stop">DEACTIVATE SHIELD</string>
+    <string name="perm_overlay_title">Overlay Permission (หน้าต่างลอย)</string>
+    <string name="perm_overlay_desc">จำเป็นสำหรับการวาดเกราะเซ็นเซอร์ทับหน้าจอ</string>
+    <string name="perm_screen_title">MediaProjection (สิทธิ์จับภาพ)</string>
+    <string name="perm_screen_desc">ใช้สำหรับประมวลผล AI และ Bubble Motion Filter</string>
     <string name="sensitivity_label">ความไวในการตรวจจับ (Confidence Threshold): %d%%</string>
     <string name="censor_breasts">เซ็นเซอร์เต้านม (Breasts)</string>
     <string name="censor_genitalia">เซ็นเซอร์อวัยวะเพศ (Genitalia)</string>
     <string name="censor_buttocks">เซ็นเซอร์บั้นท้าย (Buttocks)</string>
-    <string name="censor_covered">รวมเนื้อหาที่มีเสื้อผ้าบางส่วน (Covered / Bikini)</string>
-    <string name="notif_channel_name">Screen Censor Service</string>
-    <string name="notif_title">Screen Censor AI ทำงานอยู่</string>
-    <string name="notif_content">กำลังสแกนและเซ็นเซอร์หน้าจอแบบเรียลไทม์</string>
+    <string name="censor_covered">รวมเนื้อหาชุดว่ายน้ำ/บิกินี่ (Covered / Bikini)</string>
+    <string name="notif_channel_name">Beta Blocker Turbo Service</string>
+    <string name="notif_title">Beta Blocker Turbo กำลังทำงาน</string>
+    <string name="notif_content">เกราะตรวจจับอัจฉริยะแบบเรียลไทม์ (Bubble Motion Filter Active)</string>
 </resources>

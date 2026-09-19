@@ -78,6 +78,11 @@ class ScreenCensorService : Service() {
 
     private var config: CensorConfig = CensorConfig()
     private var reusablePaddedBitmap: Bitmap? = null
+    private var reusableCleanBitmap: Bitmap? = null
+    private var cleanCanvas: android.graphics.Canvas? = null
+    private val srcCropRect = android.graphics.Rect()
+    private val dstCropRect = android.graphics.Rect()
+    private val similarityFilter = FrameSimilarityFilter()
 
     private var vibrator: Vibrator? = null
     private var lastHadDetections = false
@@ -269,11 +274,12 @@ class ScreenCensorService : Service() {
 
     private fun startDetectionLoop() {
         serviceScope.launch {
-            val targetInterval = (1000 / config.fpsLimit.coerceIn(15, 60)).toLong()
+            val baseInterval = 100L
 
             while (isActive && isRunning) {
                 val startTime = System.currentTimeMillis()
                 var image: Image? = null
+                var dynamicDelay = baseInterval
                 try {
                     image = imageReader?.acquireLatestImage()
                     if (image != null) {
@@ -283,7 +289,7 @@ class ScreenCensorService : Service() {
                         val rowStride = planes[0].rowStride
                         val paddedWidth = rowStride / pixelStride
 
-                        // 1. Safely allocate padded bitmap matching buffer dimensions
+                        // 1. Safely allocate padded bitmap matching buffer dimensions (Zero-GC after 1st frame)
                         if (reusablePaddedBitmap == null || reusablePaddedBitmap?.width != paddedWidth || reusablePaddedBitmap?.height != captureHeight) {
                             reusablePaddedBitmap?.recycle()
                             reusablePaddedBitmap = Bitmap.createBitmap(paddedWidth, captureHeight, Bitmap.Config.ARGB_8888)
@@ -293,29 +299,50 @@ class ScreenCensorService : Service() {
                         buffer.rewind()
                         paddedBitmap.copyPixelsFromBuffer(buffer)
 
-                        // 2. Crop out row padding to get exact 360x640 frame for AI model
-                        val cleanBitmap = if (paddedWidth == captureWidth) {
+                        // 2. Crop out row padding with ZERO allocations (Reusing canvas & destination bitmap)
+                        val cleanBitmap: Bitmap = if (paddedWidth == captureWidth) {
                             paddedBitmap
                         } else {
-                            Bitmap.createBitmap(paddedBitmap, 0, 0, captureWidth, captureHeight)
+                            if (reusableCleanBitmap == null) {
+                                reusableCleanBitmap = Bitmap.createBitmap(captureWidth, captureHeight, Bitmap.Config.ARGB_8888)
+                                cleanCanvas = android.graphics.Canvas(reusableCleanBitmap!!)
+                                srcCropRect.set(0, 0, captureWidth, captureHeight)
+                                dstCropRect.set(0, 0, captureWidth, captureHeight)
+                            }
+                            cleanCanvas?.drawBitmap(paddedBitmap, srcCropRect, dstCropRect, null)
+                            reusableCleanBitmap!!
                         }
 
-                        // 3. Run AI Detection
-                        val rawDetections = yoloDetector?.detect(cleanBitmap, config) ?: emptyList()
-                        if (cleanBitmap != paddedBitmap) {
-                            cleanBitmap.recycle()
+                        // 3. Smart Motion & Similarity Gating (Bubble Translate architecture)
+                        val frameState = similarityFilter.evaluate(cleanBitmap)
+
+                        val smoothedDetections = when (frameState) {
+                            FrameSimilarityFilter.FrameState.STATIC -> {
+                                // Screen is static: reuse cached boxes! 0ms AI inference, 0% CPU!
+                                dynamicDelay = 120L
+                                boxTracker.getCurrentTracks()
+                            }
+                            FrameSimilarityFilter.FrameState.SCROLLING -> {
+                                // Screen is flinging/scrolling fast: hold boxes, skip AI until screen settles!
+                                dynamicDelay = 80L
+                                boxTracker.getCurrentTracks()
+                            }
+                            FrameSimilarityFilter.FrameState.CHANGED -> {
+                                // Screen has settled on new content: run YOLO detection!
+                                dynamicDelay = baseInterval
+                                val rawDetections = yoloDetector?.detect(cleanBitmap, config) ?: emptyList()
+                                boxTracker.update(rawDetections, config.smoothTracking)
+                            }
                         }
 
-                        // 4. Apply Box Smoothing & Persistence Tracker
-                        val smoothedDetections = boxTracker.update(rawDetections, config.smoothTracking)
-
-                        // 5. Haptic Pulse on new block trigger
-                        if (config.hapticFeedback && rawDetections.isNotEmpty() && !lastHadDetections) {
+                        // 4. Haptic Pulse on new block trigger
+                        val hasDetections = smoothedDetections.isNotEmpty()
+                        if (config.hapticFeedback && hasDetections && !lastHadDetections) {
                             triggerHapticPulse()
                         }
-                        lastHadDetections = rawDetections.isNotEmpty()
+                        lastHadDetections = hasDetections
 
-                        // 6. Update Overlay
+                        // 5. Update Overlay (always smooth 60 FPS visual rendering)
                         overlayView?.updateDetections(smoothedDetections)
                     }
                 } catch (e: Exception) {
@@ -325,7 +352,7 @@ class ScreenCensorService : Service() {
                 }
 
                 val elapsed = System.currentTimeMillis() - startTime
-                val sleepTime = (targetInterval - elapsed).coerceAtLeast(5)
+                val sleepTime = (dynamicDelay - elapsed).coerceAtLeast(10)
                 delay(sleepTime)
             }
         }
