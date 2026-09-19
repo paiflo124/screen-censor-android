@@ -11,33 +11,33 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
-        <!-- Header -->
+        <!-- Title Header -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/app_name"
+            android:text="⚡ Screen Censor AI"
             android:textColor="@color/white"
-            android:textSize="28sp"
+            android:textSize="26sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Real-time On-Device AI Screen Blocker"
-            android:textColor="#AAAAAA"
-            android:textSize="14sp" />
+            android:layout_marginTop="2dp"
+            android:text="Beta Blocker + Hotscreen Unified Super App"
+            android:textColor="#00E5FF"
+            android:textSize="13sp" />
 
         <!-- Status Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="14dp"
             app:cardBackgroundColor="@color/dark_surface"
             app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
+            app:cardElevation="3dp"
             app:strokeColor="#333333"
             app:strokeWidth="1dp">
 
@@ -53,31 +53,31 @@
                     android:layout_height="wrap_content"
                     android:text="@string/status_inactive"
                     android:textColor="@color/accent_red"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnToggle"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="54dp"
                     android:layout_marginTop="12dp"
                     android:backgroundTint="@color/accent_blue"
                     android:text="@string/btn_start"
                     android:textColor="@color/white"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
                     app:cornerRadius="12dp" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Detection Settings Card -->
+        <!-- Visual Style Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="14dp"
             app:cardBackgroundColor="@color/dark_surface"
             app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
             app:strokeColor="#333333"
             app:strokeWidth="1dp">
 
@@ -90,80 +90,70 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/title_settings"
-                    android:textColor="@color/white"
-                    android:textSize="18sp"
+                    android:text="🎨 สไตล์การเซ็นเซอร์ (Visual Style)"
+                    android:textColor="#00E5FF"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <!-- Sensitivity Slider -->
-                <TextView
-                    android:id="@+id/tvSensitivity"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="ความไวในการตรวจจับ (Confidence): 35%"
-                    android:textColor="@color/white"
-                    android:textSize="14sp" />
-
-                <com.google.android.material.slider.Slider
-                    android:id="@+id/sliderConfidence"
+                <RadioGroup
+                    android:id="@+id/rgStyles"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:value="35.0"
-                    android:valueFrom="10.0"
-                    android:valueTo="90.0"
-                    android:stepSize="5.0"
-                    app:thumbColor="@color/accent_blue"
-                    app:trackColorActive="@color/accent_blue"
-                    app:trackColorInactive="#444444" />
+                    android:layout_marginTop="10dp">
 
-                <!-- Toggles -->
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchBreasts"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="@string/censor_breasts"
-                    android:textColor="@color/white" />
+                    <RadioButton
+                        android:id="@+id/rbGlitch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="⚡ Cyberpunk Glitch (เส้นสแกน + ขอบนีออน)"
+                        android:textColor="@color/white" />
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchGenitalia"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:checked="true"
-                    android:text="@string/censor_genitalia"
-                    android:textColor="@color/white" />
+                    <RadioButton
+                        android:id="@+id/rbCautionTape"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="🚧 Caution Tape (แถบเหลือง-ดำ สไตล์ที่กั้น)"
+                        android:textColor="@color/white" />
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchButtocks"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:checked="true"
-                    android:text="@string/censor_buttocks"
-                    android:textColor="@color/white" />
+                    <RadioButton
+                        android:id="@+id/rbMosaic"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="🔲 Japanese Mosaic (ตารางพิกเซลสไตล์ญี่ปุ่น)"
+                        android:textColor="@color/white" />
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchCovered"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:checked="false"
-                    android:text="@string/censor_covered"
-                    android:textColor="@color/white" />
+                    <RadioButton
+                        android:id="@+id/rbBlur"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="🌫️ Frosted Blur (กระจกฝ้าเบลอนุ่มนวล)"
+                        android:textColor="@color/white" />
+
+                    <RadioButton
+                        android:id="@+id/rbSolidGlow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="⬛ Solid Neon Glow (กล่องดำขอบไฟกะพริบ)"
+                        android:textColor="@color/white" />
+
+                </RadioGroup>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Information Card -->
+        <!-- Text Stamp Settings Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#1A2733"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="@color/dark_surface"
             app:cardCornerRadius="16dp"
-            app:strokeColor="#2C4D6F"
+            app:strokeColor="#333333"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -175,19 +165,249 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="💡 คำแนะนำการใช้งาน"
-                    android:textColor="#64B5F6"
-                    android:textSize="15sp"
+                    android:text="🏷️ ข้อความปั๊มทับกล่อง (Text Stamp)"
+                    android:textColor="#FF0055"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchShowText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:checked="true"
+                    android:text="แสดงข้อความปั๊มทับ (เช่น CENSORED, BLOCKED)"
+                    android:textColor="@color/white" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Sliders Card: Padding & Confidence -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="@color/dark_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="#333333"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:lineSpacingExtra="4dp"
-                    android:text="1. ระบบจะขอสิทธิ์ 'แสดงทับแอปอื่น' และ 'ดักจับหน้าจอ' เพื่อทำงาน\n2. เมื่อเปิดใช้งาน คุณสามารถเปิดแอปอื่น (เช่น เบราว์เซอร์, โซเชียลมีเดีย) ใช้งานและสัมผัสหน้าจอได้ตามปกติ\n3. กล่องสีดำจะปรากฏขึ้นปิดทับบริเวณ 18+ แบบเรียลไทม์โดยอัตโนมัติ"
-                    android:textColor="#B0BEC5"
+                    android:text="📐 ขนาดและการตรวจจับ (Tuning)"
+                    android:textColor="@color/accent_green"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvPadding"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="ขยายขนาดกล่อง (Box Padding): 15%"
+                    android:textColor="@color/white"
                     android:textSize="13sp" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderPadding"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:value="15.0"
+                    android:valueFrom="0.0"
+                    android:valueTo="40.0"
+                    android:stepSize="5.0"
+                    app:thumbColor="@color/accent_green"
+                    app:trackColorActive="@color/accent_green" />
+
+                <TextView
+                    android:id="@+id/tvConfidence"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="ความไวในการตรวจจับ (Confidence): 35%"
+                    android:textColor="@color/white"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderConfidence"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:value="35.0"
+                    android:valueFrom="10.0"
+                    android:valueTo="80.0"
+                    android:stepSize="5.0"
+                    app:thumbColor="@color/accent_blue"
+                    app:trackColorActive="@color/accent_blue" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Category Checklist Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="@color/dark_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="#333333"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎯 เลือกชิ้นส่วนที่ต้องการเซ็นเซอร์"
+                    android:textColor="@color/accent_blue"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchBreastsExposed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:checked="true"
+                    android:text="เต้านมเปลือย (Breasts Exposed)"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchBreastsCovered"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="true"
+                    android:text="ชุดว่ายน้ำ/บิกินี่ท่อนบน (Breasts Covered)"
+                    android:textColor="#81D4FA" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchGenitaliaExposed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="true"
+                    android:text="อวัยวะเพศ (Genitalia Exposed)"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchGenitaliaCovered"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="true"
+                    android:text="บิกินี่ล่าง/กางเกงใน (Genitalia Covered)"
+                    android:textColor="#81D4FA" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchButtocksExposed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="true"
+                    android:text="บั้นท้ายเปลือย (Buttocks Exposed)"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchButtocksCovered"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="true"
+                    android:text="บั้นท้ายในชุดว่ายน้ำ (Buttocks Covered)"
+                    android:textColor="#81D4FA" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchEyes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="true"
+                    android:text="👁️ ดวงตา (Eye Detection / แถบคาดตาสีดำ)"
+                    android:textColor="#FF80AB" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchFace"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="false"
+                    android:text="ใบหน้าทั้งหน้า (Full Face)"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchBelly"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="false"
+                    android:text="สะดือ / หน้าท้อง (Belly)"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchArmpits"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="false"
+                    android:text="รักแร้ (Armpits)"
+                    android:textColor="@color/white" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Advanced Options Card: Smoothing & Haptics -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="@color/dark_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="#333333"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚙️ ประสิทธิภาพและการสั่นเตือน"
+                    android:textColor="#FFD600"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchSmooth"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:checked="true"
+                    android:text="ลดการกระพริบเวลาเลื่อนหน้าจอ (Smooth Tracking)"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchHaptic"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:checked="true"
+                    android:text="สั่นเตือนเมื่อบล็อกภาพ (Haptic Pulse)"
+                    android:textColor="@color/white" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

@@ -3,18 +3,27 @@ package com.screencensor.model
 import android.graphics.RectF
 
 data class DetectionBox(
-    val rect: RectF,          // Normalized coordinates (0..1) or screen coordinates
+    var rect: RectF,          // Normalized coordinates (0..1)
     val classId: Int,
     val className: String,
     val score: Float,
-    val category: CensorCategory
+    val category: DetailedCategory,
+    var phrase: String = "CENSORED",
+    var framesSinceDetected: Int = 0 // For persistence/tracking
 )
 
-enum class CensorCategory {
-    BREASTS,
-    GENITALIA,
-    BUTTOCKS,
-    COVERED,
+enum class DetailedCategory {
+    BREASTS_EXPOSED,
+    BREASTS_COVERED,
+    GENITALIA_EXPOSED,
+    GENITALIA_COVERED,
+    BUTTOCKS_EXPOSED,
+    BUTTOCKS_COVERED,
+    EYE,
+    FACE,
+    BELLY,
+    ARMPITS,
+    FEET,
     OTHER
 }
 
@@ -38,13 +47,20 @@ object YoloLabels {
         "EYE"                        // 15
     )
 
-    fun getCategory(classId: Int): CensorCategory {
+    fun getCategory(classId: Int): DetailedCategory {
         return when (classId) {
-            7 -> CensorCategory.BREASTS
-            3, 11 -> CensorCategory.GENITALIA
-            5, 12 -> CensorCategory.BUTTOCKS
-            2, 4, 6 -> CensorCategory.COVERED
-            else -> CensorCategory.OTHER
+            7, 8 -> DetailedCategory.BREASTS_EXPOSED
+            6 -> DetailedCategory.BREASTS_COVERED
+            3, 11 -> DetailedCategory.GENITALIA_EXPOSED
+            2 -> DetailedCategory.GENITALIA_COVERED
+            5, 12 -> DetailedCategory.BUTTOCKS_EXPOSED
+            4 -> DetailedCategory.BUTTOCKS_COVERED
+            15 -> DetailedCategory.EYE
+            0, 1 -> DetailedCategory.FACE
+            10 -> DetailedCategory.BELLY
+            9 -> DetailedCategory.ARMPITS
+            13, 14 -> DetailedCategory.FEET
+            else -> DetailedCategory.OTHER
         }
     }
 }

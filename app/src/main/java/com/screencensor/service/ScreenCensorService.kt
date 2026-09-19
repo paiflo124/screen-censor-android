@@ -18,6 +18,9 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
@@ -25,6 +28,8 @@ import androidx.core.app.NotificationCompat
 import com.screencensor.MainActivity
 import com.screencensor.R
 import com.screencensor.ai.YoloDetector
+import com.screencensor.model.CensorConfig
+import com.screencensor.model.CensorPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -43,12 +48,8 @@ class ScreenCensorService : Service() {
 
         const val EXTRA_RESULT_CODE = "extra_result_code"
         const val EXTRA_RESULT_DATA = "extra_result_data"
-        const val EXTRA_CONFIDENCE = "extra_confidence"
-        const val EXTRA_BREASTS = "extra_breasts"
-        const val EXTRA_GENITALIA = "extra_genitalia"
-        const val EXTRA_BUTTOCKS = "extra_buttocks"
-        const val EXTRA_COVERED = "extra_covered"
         const val ACTION_STOP = "action_stop_censor"
+        const val ACTION_UPDATE_CONFIG = "action_update_config"
 
         var isRunning = false
             private set
@@ -63,23 +64,21 @@ class ScreenCensorService : Service() {
     private var imageReader: ImageReader? = null
 
     private var yoloDetector: YoloDetector? = null
+    private val boxTracker = BoxTracker()
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
 
     private var screenWidth = 720
     private var screenHeight = 1280
     private var screenDpi = 320
 
-    // Capture resolution (scaled down for high performance)
     private val captureWidth = 360
     private val captureHeight = 640
 
-    private var confidenceThreshold = 0.35f
-    private var censorBreasts = true
-    private var censorGenitalia = true
-    private var censorButtocks = true
-    private var censorCovered = false
-
+    private var config: CensorConfig = CensorConfig()
     private var reusableBitmap: Bitmap? = null
+
+    private var vibrator: Vibrator? = null
+    private var lastHadDetections = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -89,6 +88,15 @@ class ScreenCensorService : Service() {
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         yoloDetector = YoloDetector(applicationContext)
 
+        // Initialize Vibrator
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            vm?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
+
         val metrics = DisplayMetrics()
         @Suppress("DEPRECATION")
         windowManager?.defaultDisplay?.getRealMetrics(metrics)
@@ -96,6 +104,7 @@ class ScreenCensorService : Service() {
         screenHeight = metrics.heightPixels
         screenDpi = metrics.densityDpi
 
+        config = CensorPreferences.load(this)
         createNotificationChannel()
     }
 
@@ -107,6 +116,13 @@ class ScreenCensorService : Service() {
             return START_NOT_STICKY
         }
 
+        if (intent.action == ACTION_UPDATE_CONFIG) {
+            config = CensorPreferences.load(this)
+            overlayView?.config = config
+            Log.i(TAG, "Config reloaded live: Style=${config.style}, Text=${config.showText}")
+            return START_STICKY
+        }
+
         val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0)
         val resultData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(EXTRA_RESULT_DATA, Intent::class.java)
@@ -115,11 +131,7 @@ class ScreenCensorService : Service() {
             intent.getParcelableExtra(EXTRA_RESULT_DATA)
         }
 
-        confidenceThreshold = intent.getFloatExtra(EXTRA_CONFIDENCE, 0.35f)
-        censorBreasts = intent.getBooleanExtra(EXTRA_BREASTS, true)
-        censorGenitalia = intent.getBooleanExtra(EXTRA_GENITALIA, true)
-        censorButtocks = intent.getBooleanExtra(EXTRA_BUTTOCKS, true)
-        censorCovered = intent.getBooleanExtra(EXTRA_COVERED, false)
+        config = CensorPreferences.load(this)
 
         if (resultCode != 0 && resultData != null) {
             startForegroundServiceNotification()
@@ -150,8 +162,8 @@ class ScreenCensorService : Service() {
         )
 
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.notif_title))
-            .setContentText(getString(R.string.notif_content))
+            .setContentTitle("Screen Censor Super App")
+            .setContentText("กำลังตรวจจับแบบเรียลไทม์ (${config.style.title})")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
@@ -187,7 +199,10 @@ class ScreenCensorService : Service() {
     private fun setupOverlayWindow() {
         if (overlayView != null) return
 
-        overlayView = CensorOverlayView(this)
+        overlayView = CensorOverlayView(this).apply {
+            this.config = this@ScreenCensorService.config
+        }
+
         val layoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -196,7 +211,6 @@ class ScreenCensorService : Service() {
             else
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE,
-            // Key flags: TOUCH-THROUGH and NON-FOCUSABLE
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -206,7 +220,7 @@ class ScreenCensorService : Service() {
 
         try {
             windowManager?.addView(overlayView, layoutParams)
-            Log.i(TAG, "Touch-through Censor Overlay added to WindowManager.")
+            Log.i(TAG, "Touch-through Censor Overlay View attached.")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to add overlay view: ${e.message}", e)
         }
@@ -221,7 +235,6 @@ class ScreenCensorService : Service() {
                 return
             }
 
-            // RGBA_8888 ImageReader for screen frame capture
             imageReader = ImageReader.newInstance(captureWidth, captureHeight, PixelFormat.RGBA_8888, 2)
 
             virtualDisplay = mediaProjection?.createVirtualDisplay(
@@ -235,7 +248,6 @@ class ScreenCensorService : Service() {
                 null
             )
 
-            // Start detection loop
             startDetectionLoop()
 
         } catch (e: Exception) {
@@ -248,6 +260,8 @@ class ScreenCensorService : Service() {
         reusableBitmap = Bitmap.createBitmap(captureWidth, captureHeight, Bitmap.Config.ARGB_8888)
 
         serviceScope.launch {
+            val targetInterval = (1000 / config.fpsLimit.coerceIn(15, 60)).toLong()
+
             while (isActive && isRunning) {
                 val startTime = System.currentTimeMillis()
                 var image: Image? = null
@@ -267,18 +281,20 @@ class ScreenCensorService : Service() {
                         )
                         bitmap.copyPixelsFromBuffer(buffer)
 
-                        // Run YOLOv11 detector
-                        val detections = yoloDetector?.detect(
-                            bitmap = bitmap,
-                            confidenceThreshold = confidenceThreshold,
-                            censorBreasts = censorBreasts,
-                            censorGenitalia = censorGenitalia,
-                            censorButtocks = censorButtocks,
-                            censorCovered = censorCovered
-                        ) ?: emptyList()
+                        // 1. Run AI Detection
+                        val rawDetections = yoloDetector?.detect(bitmap, config) ?: emptyList()
 
-                        // Update overlay view
-                        overlayView?.updateDetections(detections)
+                        // 2. Apply Box Smoothing & Persistence Tracker
+                        val smoothedDetections = boxTracker.update(rawDetections, config.smoothTracking)
+
+                        // 3. Haptic Pulse on new block trigger
+                        if (config.hapticFeedback && rawDetections.isNotEmpty() && !lastHadDetections) {
+                            triggerHapticPulse()
+                        }
+                        lastHadDetections = rawDetections.isNotEmpty()
+
+                        // 4. Update Overlay
+                        overlayView?.updateDetections(smoothedDetections)
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in detection loop: ${e.message}")
@@ -286,11 +302,23 @@ class ScreenCensorService : Service() {
                     image?.close()
                 }
 
-                // Maintain ~20 FPS (every 50ms) to ensure smooth censorship without heating the device
                 val elapsed = System.currentTimeMillis() - startTime
-                val sleepTime = (50 - elapsed).coerceAtLeast(10)
+                val sleepTime = (targetInterval - elapsed).coerceAtLeast(5)
                 delay(sleepTime)
             }
+        }
+    }
+
+    private fun triggerHapticPulse() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createOneShot(35, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(35)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Haptic error: ${e.message}")
         }
     }
 
@@ -316,10 +344,12 @@ class ScreenCensorService : Service() {
             yoloDetector?.close()
             yoloDetector = null
 
+            boxTracker.clear()
+
             reusableBitmap?.recycle()
             reusableBitmap = null
 
-            Log.i(TAG, "ScreenCensorService destroyed and resources released.")
+            Log.i(TAG, "ScreenCensorService destroyed.")
         } catch (e: Exception) {
             Log.e(TAG, "Error during service teardown: ${e.message}", e)
         }
