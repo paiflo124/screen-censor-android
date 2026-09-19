@@ -17,7 +17,9 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -75,10 +77,11 @@ class ScreenCensorService : Service() {
     private val captureHeight = 640
 
     private var config: CensorConfig = CensorConfig()
-    private var reusableBitmap: Bitmap? = null
+    private var reusablePaddedBitmap: Bitmap? = null
 
     private var vibrator: Vibrator? = null
     private var lastHadDetections = false
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -88,7 +91,6 @@ class ScreenCensorService : Service() {
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         yoloDetector = YoloDetector(applicationContext)
 
-        // Initialize Vibrator
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
             vm?.defaultVibrator
@@ -134,6 +136,7 @@ class ScreenCensorService : Service() {
         config = CensorPreferences.load(this)
 
         if (resultCode != 0 && resultData != null) {
+            // Android 14 requirement: startForeground MUST be called before getMediaProjection!
             startForegroundServiceNotification()
             setupOverlayWindow()
             startScreenCapture(resultCode, resultData)
@@ -162,7 +165,7 @@ class ScreenCensorService : Service() {
         )
 
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Screen Censor Super App")
+            .setContentTitle("Screen Censor AI")
             .setContentText("กำลังตรวจจับแบบเรียลไทม์ (${config.style.title})")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
@@ -235,6 +238,14 @@ class ScreenCensorService : Service() {
                 return
             }
 
+            // CRITICAL Android 14 requirement: Register Callback prior to createVirtualDisplay!
+            mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    Log.i(TAG, "MediaProjection stopped by system")
+                    stopSelf()
+                }
+            }, mainHandler)
+
             imageReader = ImageReader.newInstance(captureWidth, captureHeight, PixelFormat.RGBA_8888, 2)
 
             virtualDisplay = mediaProjection?.createVirtualDisplay(
@@ -245,7 +256,7 @@ class ScreenCensorService : Service() {
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 imageReader?.surface,
                 null,
-                null
+                mainHandler
             )
 
             startDetectionLoop()
@@ -257,8 +268,6 @@ class ScreenCensorService : Service() {
     }
 
     private fun startDetectionLoop() {
-        reusableBitmap = Bitmap.createBitmap(captureWidth, captureHeight, Bitmap.Config.ARGB_8888)
-
         serviceScope.launch {
             val targetInterval = (1000 / config.fpsLimit.coerceIn(15, 60)).toLong()
 
@@ -272,32 +281,45 @@ class ScreenCensorService : Service() {
                         val buffer: ByteBuffer = planes[0].buffer
                         val pixelStride = planes[0].pixelStride
                         val rowStride = planes[0].rowStride
-                        val rowPadding = rowStride - pixelStride * captureWidth
+                        val paddedWidth = rowStride / pixelStride
 
-                        val bitmap = reusableBitmap ?: Bitmap.createBitmap(
-                            captureWidth + rowPadding / pixelStride,
-                            captureHeight,
-                            Bitmap.Config.ARGB_8888
-                        )
-                        bitmap.copyPixelsFromBuffer(buffer)
+                        // 1. Safely allocate padded bitmap matching buffer dimensions
+                        if (reusablePaddedBitmap == null || reusablePaddedBitmap?.width != paddedWidth || reusablePaddedBitmap?.height != captureHeight) {
+                            reusablePaddedBitmap?.recycle()
+                            reusablePaddedBitmap = Bitmap.createBitmap(paddedWidth, captureHeight, Bitmap.Config.ARGB_8888)
+                        }
 
-                        // 1. Run AI Detection
-                        val rawDetections = yoloDetector?.detect(bitmap, config) ?: emptyList()
+                        val paddedBitmap = reusablePaddedBitmap!!
+                        buffer.rewind()
+                        paddedBitmap.copyPixelsFromBuffer(buffer)
 
-                        // 2. Apply Box Smoothing & Persistence Tracker
+                        // 2. Crop out row padding to get exact 360x640 frame for AI model
+                        val cleanBitmap = if (paddedWidth == captureWidth) {
+                            paddedBitmap
+                        } else {
+                            Bitmap.createBitmap(paddedBitmap, 0, 0, captureWidth, captureHeight)
+                        }
+
+                        // 3. Run AI Detection
+                        val rawDetections = yoloDetector?.detect(cleanBitmap, config) ?: emptyList()
+                        if (cleanBitmap != paddedBitmap) {
+                            cleanBitmap.recycle()
+                        }
+
+                        // 4. Apply Box Smoothing & Persistence Tracker
                         val smoothedDetections = boxTracker.update(rawDetections, config.smoothTracking)
 
-                        // 3. Haptic Pulse on new block trigger
+                        // 5. Haptic Pulse on new block trigger
                         if (config.hapticFeedback && rawDetections.isNotEmpty() && !lastHadDetections) {
                             triggerHapticPulse()
                         }
                         lastHadDetections = rawDetections.isNotEmpty()
 
-                        // 4. Update Overlay
+                        // 6. Update Overlay
                         overlayView?.updateDetections(smoothedDetections)
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error in detection loop: ${e.message}")
+                    Log.e(TAG, "Error in detection loop: ${e.message}", e)
                 } finally {
                     image?.close()
                 }
@@ -346,8 +368,8 @@ class ScreenCensorService : Service() {
 
             boxTracker.clear()
 
-            reusableBitmap?.recycle()
-            reusableBitmap = null
+            reusablePaddedBitmap?.recycle()
+            reusablePaddedBitmap = null
 
             Log.i(TAG, "ScreenCensorService destroyed.")
         } catch (e: Exception) {

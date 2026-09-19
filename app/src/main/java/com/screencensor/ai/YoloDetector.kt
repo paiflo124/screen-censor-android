@@ -11,6 +11,8 @@ import com.screencensor.model.CensorConfig
 import com.screencensor.model.DetailedCategory
 import com.screencensor.model.DetectionBox
 import com.screencensor.model.YoloLabels
+import java.io.File
+import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -52,9 +54,19 @@ class YoloDetector(private val context: Context) : AutoCloseable {
                 setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
             }
 
-            val modelBytes = context.assets.open("model.onnx").use { it.readBytes() }
-            ortSession = ortEnv?.createSession(modelBytes, sessionOptions)
-            Log.i(TAG, "ONNX Runtime YOLOv11 Nano model loaded successfully (${modelBytes.size / 1024 / 1024} MB).")
+            // Copy model asset to cacheDir to allow direct mmap loading (fastest & zero OOM risk)
+            val modelFile = File(context.cacheDir, "model.onnx")
+            val expectedSize = 5279134L
+            if (!modelFile.exists() || modelFile.length() != expectedSize) {
+                context.assets.open("model.onnx").use { input ->
+                    FileOutputStream(modelFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            }
+
+            ortSession = ortEnv?.createSession(modelFile.absolutePath, sessionOptions)
+            Log.i(TAG, "ONNX Runtime YOLOv11 Nano model loaded successfully from ${modelFile.absolutePath}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize ONNX Runtime: ${e.message}", e)
         }
@@ -65,7 +77,7 @@ class YoloDetector(private val context: Context) : AutoCloseable {
         val session = ortSession ?: return emptyList()
         val env = ortEnv ?: return emptyList()
 
-        // 1. Scale down to 320x320 if needed
+        // 1. Scale down to 320x320
         val scaledBitmap = if (bitmap.width == INPUT_SIZE && bitmap.height == INPUT_SIZE) {
             bitmap
         } else {
@@ -125,7 +137,6 @@ class YoloDetector(private val context: Context) : AutoCloseable {
                 if (maxScore >= config.confidenceThreshold && bestClassId >= 0) {
                     val category = YoloLabels.getCategory(bestClassId)
 
-                    // Check enabled category in user config
                     val isEnabled = when (category) {
                         DetailedCategory.BREASTS_EXPOSED -> config.censorBreastsExposed
                         DetailedCategory.BREASTS_COVERED -> config.censorBreastsCovered
@@ -177,7 +188,6 @@ class YoloDetector(private val context: Context) : AutoCloseable {
             inputTensor.close()
         }
 
-        // 6. NMS Suppression
         return applyNms(candidates, DEFAULT_IOU_THRESHOLD)
     }
 
